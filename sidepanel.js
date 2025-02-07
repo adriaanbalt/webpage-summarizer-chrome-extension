@@ -21,6 +21,7 @@ function summarize(openaiApiKey, anthropicApiKey, summaryElement, loadingElement
     if (response.error) {
       errorContainer.textContent = `Error: ${response.error}`;
     } else {
+      errorContainer.textContent = ``;
       summaryElement.textContent = response.summary;
     }
   });
@@ -45,6 +46,7 @@ function query(openaiApiKey, anthropicApiKey, query, queryContainer, loadingElem
     if (response.error) {
       errorContainer.textContent = `Error: ${response.error}`;
     } else {
+      errorContainer.textContent = ``;
       const child = document.createElement('div');
       child.classList.add('response');
       child.textContent = response.summary;
