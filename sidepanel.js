@@ -3,17 +3,7 @@ const ANTHROPIC_API_KEY = '';
 const OPENAI_API_KEY = '';
 
 
-function handleApiResponse(response, summaryElement, loadingElement, button) {
-  loadingElement.style.display = 'none';
-  button.disabled = false;
-  if (response.error) {
-    summaryElement.textContent = `Error: ${response.error}`;
-  } else {
-    summaryElement.textContent = response.summary;
-  }
-}
-
-function summarize(openaiApiKey, anthropicApiKey, summaryElement, loadingElement, button) {
+function summarize(openaiApiKey, anthropicApiKey, summaryElement, loadingElement, errorContainer, button) {
   if (!openaiApiKey && !anthropicApiKey) {
     loadingElement.style.display = 'none';
     button.disabled = false;
@@ -26,7 +16,13 @@ function summarize(openaiApiKey, anthropicApiKey, summaryElement, loadingElement
     openaiApiKey: openaiApiKey,
     anthropicApiKey: anthropicApiKey
   }, function(response) {
-    handleApiResponse(response, summaryElement, loadingElement, button);
+    loadingElement.style.display = 'none';
+    button.disabled = false;
+    if (response.error) {
+      errorContainer.textContent = `Error: ${response.error}`;
+    } else {
+      summaryElement.textContent = response.summary;
+    }
   });
 }
 
