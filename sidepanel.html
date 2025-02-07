@@ -5,26 +5,26 @@
   <style>
     body { width: 300px; padding: 10px; font-family: Arial, sans-serif; }
     button { margin-top: 10px; padding: 5px 10px; }
-    #summary { margin-top: 10px; white-space: pre-wrap; }
+    #summary { margin-top: 20px; margin-bottom: 20px; white-space: pre-wrap; }
     #query {
       width: 100%; 
     }
-    .loading { display: none; }
+    .loading { display: none; margin-top: 20px; }
     .section {
       /* padding: 10px; */
       padding-bottom: 10px;
+      margin-top: 20px;
     }
     .section.summary {
       margin-bottom: 10px;
       border-bottom: 1px solid #1f1f1f;
     }
     .response {
-      background-color: #f1f1f1; 
-      border-radius: 5px; 
-      padding: 10px;
-      margin-top: 10px;
-      margin-bottom: 10px;
-      border-bottom: 1px dotted #1f1f1f;
+      padding-top: 20px;
+      padding-bottom: 20px;
+      margin-top: 20px;
+      margin-bottom: 20px;
+      border-bottom: 1px dashed #1f1f1f;
     }
     .credit {
       display: inline-block;
@@ -38,15 +38,26 @@
     .credit:hover {
       color: #666;
     }
+    h2 { 
+      font-size: 20px;
+    }
     button {
       background-color: #fff;
       border: 0;
+      font-size: 16px;
       box-shadow: 0px 1px 4px rgba(0, 0, 0, .1); /* Default box shadow with 0 opacity */
       transition: transform 0.3s ease, box-shadow 0.3s ease; /* Smooth transition for scaling and box shadow */
     }
     button:hover {
       transform: scale(1.1); /* Scale up by 5% on hover */
       box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); /* Increase box shadow opacity on hover */
+    }
+    textarea {
+      box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+      outline: none;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid transparent; /* Optional: to maintain layout without visible border */
     }
   </style>
 </head>
@@ -60,7 +71,7 @@
 
   <div class="section">
     <h2>Web Page AI Query</h2>
-    <textarea id="query" placeholder="What on this webpage do you want more information about?" rows="4"></textarea>
+    <textarea id="query" placeholder="What on this webpage do you want more information about?" rows="6"></textarea>
     <button id="submit">Submit</button>
     <div id="queryResponses"></div>
     <div id="loadingQuery" class="loading">Loading your query... Please wait.</div>
