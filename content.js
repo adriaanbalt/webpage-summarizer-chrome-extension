@@ -1,3 +1,5 @@
+console.log('Content script loaded and ready to receive messages.');
+
 function extractTextContent() {
   const bodyElement = document.body;
   console.log('bodyElement', bodyElement.innerText);
@@ -11,4 +13,3 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
     sendResponse({text: extractedText});
   }
 });
-console.log('Content script loaded and ready to receive messages.');

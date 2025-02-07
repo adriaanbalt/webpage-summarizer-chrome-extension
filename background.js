@@ -1,5 +1,5 @@
-const ANTHROPIC_API_KEY =  // your anthropic key
-const OPENAI_API_KEY = // your openai key
+const ANTHROPIC_API_KEY =  'sk-ant-'// your anthropic key
+const OPENAI_API_KEY = 'sk-proj-'; // your openai key
 
 async function sendToClaudeAI(text) {
   const apiUrl = 'https://api.anthropic.com/v1/messages';
@@ -39,8 +39,8 @@ async function sendToClaudeAI(text) {
 }
 
 async function sendToOpenAI(text) {
+  console.log('sendToOpenAI', text)
   const apiUrl = 'https://api.openai.com/v1/chat/completions';
-  console.log('openai', text);
   const requestBody = {
     model: "gpt-4o-mini",
     messages: [
@@ -94,18 +94,68 @@ async function summarizeText(text, aiService = 'openai') {
   }
 }
 
+async function queryText(query, text, aiService = 'openai') {
+  const promptWrapper = `Please determine the subject matter based on the following <text>. If some of the <text> does not relate to the overall subject matter, please remove it from your analysis. From this resulting text, answer this question: <question>${query}</question>. <text>${text}</text`;
+
+  console.log('promptWrapper', promptWrapper)
+  try {
+    if (aiService === 'claude') {
+      return await sendToClaudeAI(promptWrapper);
+    } else if (aiService === 'openai') {
+      return await sendToOpenAI(promptWrapper);
+    } else {
+      throw new Error('Invalid AI service specified');
+    }
+  } catch (error) {
+    console.error('Error in summarizeText:', error);
+    throw error;
+  }
+}
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log('request', request)
   if (request.action === "summarize") {
     chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
-      try {
-        const response = await chrome.tabs.sendMessage(tabs[0].id, {action: "extractText"});
-        const extractedText = response.text;
-        const summary = await summarizeText(extractedText, 'openai');
-        console.log('summary from ai:', summary)
-        sendResponse({summary: summary});
-      } catch (error) {
-        console.error('Error:', error); // Debug log
-        sendResponse({error: error.message});
+      if (tabs.length > 0) { // Check if there is an active tab
+        try {
+          const response = await chrome.tabs.sendMessage(tabs[0].id, {action: "extractText"});
+          if (response && response.text) { // Check if response is valid
+            const extractedText = response.text;
+            const summary = await summarizeText(extractedText, 'openai');
+            console.log('summary from ai:', summary);
+            sendResponse({summary: summary});
+          } else {
+            throw new Error('No response from content script');
+          }
+        } catch (error) {
+          console.error('Error:', error); // Debug log
+          sendResponse({error: error.message});
+        }
+      } else {
+        sendResponse({error: 'No active tab found'}); // Handle no active tab
+      }
+    });
+    return true;  // Indicates that the response is sent asynchronously
+  }
+  if (request.action === "query") {
+    chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
+      if (tabs.length > 0) { // Check if there is an active tab
+        try {
+          const response = await chrome.tabs.sendMessage(tabs[0].id, {action: "extractText"});
+          if (response && response.text) { // Check if response is valid
+            const extractedText = response.text;
+            const summary = await queryText(request.query, extractedText, 'openai');
+            console.log('summary from ai:', summary);
+            sendResponse({summary: summary});
+          } else {
+            throw new Error('No response from content script');
+          }
+        } catch (error) {
+          console.error('Error:', error); // Debug log
+          sendResponse({error: error.message});
+        }
+      } else {
+        sendResponse({error: 'No active tab found'}); // Handle no active tab
       }
     });
     return true;  // Indicates that the response is sent asynchronously
