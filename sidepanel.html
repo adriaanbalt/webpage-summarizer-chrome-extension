@@ -9,7 +9,7 @@
     #query {
       width: 100%; 
     }
-    .loading { display: none; margin-top: 20px; }
+    .loading { display: none; margin-top: 20px; margin-bottom: 20px; }
     .section {
       /* padding: 10px; */
       padding-bottom: 10px;
@@ -19,10 +19,12 @@
       margin-bottom: 10px;
       border-bottom: 1px solid #1f1f1f;
     }
+    #queryResponses {
+      margin-top: 20px;
+    }
     .response {
       padding-top: 20px;
       padding-bottom: 20px;
-      margin-top: 20px;
       margin-bottom: 20px;
       border-bottom: 1px dashed #1f1f1f;
     }
@@ -52,20 +54,38 @@
       transform: scale(1.1); /* Scale up by 5% on hover */
       box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3); /* Increase box shadow opacity on hover */
     }
-    textarea {
+    input, textarea {
       box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
       outline: none;
+      display: block;
       padding: 10px;
       font-size: 16px;
+      width: 100%;
       border: 1px solid transparent; /* Optional: to maintain layout without visible border */
     }
+    #summaryError, #queryError {
+      color: red;
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+
   </style>
 </head>
 <body>
+  <div class="section">
+    <h2>API Keys</h2>
+    <h4 for="openaiApiKey">OpenAI API Key:</h4>
+    <input type="text" id="openaiApiKey" placeholder="Enter your OpenAI API Key" />
+    <div>
+      <h4 for="anthropicApiKey">Anthropic API Key:</h4>
+      <input type="text" id="anthropicApiKey" placeholder="Enter your Anthropic API Key" />
+    </div>
+  </div>
   <div class="section summary">
     <h2>Web Page AI Summarizer</h2>
     <button id="summarize">Summarize Page</button>
     <div id="summary"></div>
+    <div id="summaryError"></div>
     <div id="loadingSummary" class="loading">Loading your summary... Please wait.</div>
   </div>
 
@@ -74,6 +94,7 @@
     <textarea id="query" placeholder="What on this webpage do you want more information about?" rows="6"></textarea>
     <button id="submit">Submit</button>
     <div id="queryResponses"></div>
+    <div id="queryError"></div>
     <div id="loadingQuery" class="loading">Loading your query... Please wait.</div>
   </div>
   <a class="credit" href="https://github.com/adriaanbalt" target="_blank">built by https://github.com/adriaanbalt</a>

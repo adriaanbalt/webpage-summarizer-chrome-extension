@@ -1,7 +1,6 @@
-const ANTHROPIC_API_KEY =  'sk-ant-'// your anthropic key
-const OPENAI_API_KEY = 'sk-proj-'; // your openai key
 
-async function sendToClaudeAI(text) {
+
+async function sendToClaudeAI(text, key ) {
   const apiUrl = 'https://api.anthropic.com/v1/messages';
   
   const requestBody = {
@@ -20,7 +19,7 @@ async function sendToClaudeAI(text) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
+        'x-api-key': key,
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify(requestBody)
@@ -38,8 +37,7 @@ async function sendToClaudeAI(text) {
   }
 }
 
-async function sendToOpenAI(text) {
-  console.log('sendToOpenAI', text)
+async function sendToOpenAI(text, key) {
   const apiUrl = 'https://api.openai.com/v1/chat/completions';
   const requestBody = {
     model: "gpt-4o-mini",
@@ -61,7 +59,7 @@ async function sendToOpenAI(text) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`
+        'Authorization': `Bearer ${key}`
       },
       body: JSON.stringify(requestBody)
     });
@@ -78,31 +76,12 @@ async function sendToOpenAI(text) {
   }
 }
 
-async function summarizeText(text, aiService = 'openai') {
-  const promptWrapper = `Please determine the subject matter based on the following text and provide a summary. If some of the text does not relate to the overall subject matter, please remove it from your analysis summary:\n\n${text}`;
+async function trigger(query, openaiApiKey, anthropicApiKey) {
   try {
-    if (aiService === 'claude') {
-      return await sendToClaudeAI(promptWrapper);
-    } else if (aiService === 'openai') {
-      return await sendToOpenAI(promptWrapper);
-    } else {
-      throw new Error('Invalid AI service specified');
-    }
-  } catch (error) {
-    console.error('Error in summarizeText:', error);
-    throw error;
-  }
-}
-
-async function queryText(query, text, aiService = 'openai') {
-  const promptWrapper = `Please determine the subject matter based on the following <text>. If some of the <text> does not relate to the overall subject matter, please remove it from your analysis. From this resulting text, answer this question: <question>${query}</question>. <text>${text}</text`;
-
-  console.log('promptWrapper', promptWrapper)
-  try {
-    if (aiService === 'claude') {
-      return await sendToClaudeAI(promptWrapper);
-    } else if (aiService === 'openai') {
-      return await sendToOpenAI(promptWrapper);
+    if (anthropicApiKey) {
+      return await sendToClaudeAI(query, anthropicApiKey);
+    } else if (openaiApiKey) {
+      return await sendToOpenAI(query, openaiApiKey);
     } else {
       throw new Error('Invalid AI service specified');
     }
@@ -113,58 +92,39 @@ async function queryText(query, text, aiService = 'openai') {
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  console.log('request', request)
-  if (request.action === "summarize") {
-    chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
-      if (tabs.length > 0) { // Check if there is an active tab
-        try {
-          const response = await chrome.tabs.sendMessage(tabs[0].id, {action: "extractText"});
-          if (response && response.text) { // Check if response is valid
-            const extractedText = response.text;
-            const summary = await summarizeText(extractedText, 'openai');
-            console.log('summary from ai:', summary);
-            sendResponse({summary: summary});
-          } else {
-            throw new Error('No response from content script');
+  chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
+    if (tabs.length > 0) { // Check if there is an active tab
+      try {
+        const response = await chrome.tabs.sendMessage(tabs[0].id, {action: "extractText"});
+        console.log('response', response)
+        if (response && response.text) { // Check if response is valid
+          const extractedText = response.text;
+          let promptWrapper = '';
+          if (request.action === "query") {
+            if (!request.query || request.query.trim() === '') {
+              throw new Error('Query cannot be empty');
+            }
+            promptWrapper = `Please determine the subject matter based on the following <text>. If some of the <text> does not relate to the overall subject matter, please remove it from your analysis. From this resulting text, answer this question: <question>${request.query}</question>. <text>${extractedText}</text`;
+          } else if (request.action === "summarize") {
+            promptWrapper = `Please determine the subject matter based on the following text and provide a summary. If some of the text does not relate to the overall subject matter, please remove it from your analysis summary:\n\n${extractedText}`;
           }
-        } catch (error) {
-          console.error('Error:', error); // Debug log
-          sendResponse({error: error.message});
+          const summary = await trigger(promptWrapper, request.openaiApiKey, request.anthropicApiKey);
+          sendResponse({summary: summary});
+        } else {
+          throw new Error('No response from content script');
         }
-      } else {
-        sendResponse({error: 'No active tab found'}); // Handle no active tab
+      } catch (error) {
+        console.error('Error:', error); // Debug log
+        sendResponse({error: error.message});
       }
-    });
-    return true;  // Indicates that the response is sent asynchronously
-  }
-  if (request.action === "query") {
-    chrome.tabs.query({active: true, currentWindow: true}, async function(tabs) {
-      if (tabs.length > 0) { // Check if there is an active tab
-        try {
-          const response = await chrome.tabs.sendMessage(tabs[0].id, {action: "extractText"});
-          if (response && response.text) { // Check if response is valid
-            const extractedText = response.text;
-            const summary = await queryText(request.query, extractedText, 'openai');
-            console.log('summary from ai:', summary);
-            sendResponse({summary: summary});
-          } else {
-            throw new Error('No response from content script');
-          }
-        } catch (error) {
-          console.error('Error:', error); // Debug log
-          sendResponse({error: error.message});
-        }
-      } else {
-        sendResponse({error: 'No active tab found'}); // Handle no active tab
-      }
-    });
-    return true;  // Indicates that the response is sent asynchronously
-  }
+    } else {
+      sendResponse({error: 'No active tab found'}); // Handle no active tab
+    }
+  });
+  return true;  // Indicates that the response is sent asynchronously
 });
 
 
 chrome.action.onClicked.addListener((tab) => {
-  console.log(' open side panel with tab id', tab.id)
   chrome.sidePanel.open({tabId: tab.id});
 });
-console.log('Sending message to content script.');
